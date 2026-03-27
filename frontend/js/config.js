@@ -4,7 +4,7 @@
 
 const CONFIG = {
   // 🔴 IMPORTANT: Replace with your Render backend URL after deploying
-  API_BASE_URL: 'https://your-fittrack-api.onrender.com/api',
+  API_BASE_URL: 'https://fitness-tracker1-z6m1.onrender.com',
 
   // For local development, use:
   // API_BASE_URL: 'http://localhost:5000/api',
