@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up — FitTrack</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <!-- HERO SIDE -->
+    <div class="auth-hero">
+      <a href="../index.html" class="nav-logo" style="font-size:1.6rem;margin-bottom:48px;">FIT<span>TRACK</span></a>
+      <div class="auth-hero-label">Join FitTrack Today</div>
+      <h1 class="auth-hero-title">Start Your<br>Fitness<br>Journey</h1>
+      <p class="auth-hero-sub">Log workouts, track calories, smash goals. Your body transformation starts with a single rep — and a single click.</p>
+      <div class="auth-hero-stats">
+        <div>
+          <div class="auth-hero-stat-num">9</div>
+          <div class="auth-hero-stat-label">Workout Types</div>
+        </div>
+        <div>
+          <div class="auth-hero-stat-num">∞</div>
+          <div class="auth-hero-stat-label">Goals</div>
+        </div>
+        <div>
+          <div class="auth-hero-stat-num">Free</div>
+          <div class="auth-hero-stat-label">Always</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM SIDE -->
+    <div class="auth-form-side">
+      <div class="auth-form-container fade-in">
+        <div class="auth-form-title">Create Account</div>
+        <div class="auth-form-sub">Fill in your details to get started</div>
+
+        <div id="alert" class="alert alert-error" role="alert">
+          <span>⚠️</span><span id="alert-msg"></span>
+        </div>
+
+        <form class="auth-form" id="signup-form" novalidate>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="name">Full Name *</label>
+              <input class="form-input" type="text" id="name" placeholder="John Doe" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="email">Email *</label>
+              <input class="form-input" type="email" id="email" placeholder="john@example.com" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password">Password *</label>
+            <input class="form-input" type="password" id="password" placeholder="Min. 6 characters" required />
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="age">Age</label>
+              <input class="form-input" type="number" id="age" placeholder="25" min="10" max="120" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="weight">Weight (kg)</label>
+              <input class="form-input" type="number" id="weight" placeholder="70" min="20" max="500" />
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="height">Height (cm)</label>
+              <input class="form-input" type="number" id="height" placeholder="175" min="50" max="300" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="fitnessGoal">Fitness Goal</label>
+              <select class="form-select" id="fitnessGoal">
+                <option value="stay_fit">Stay Fit</option>
+                <option value="lose_weight">Lose Weight</option>
+                <option value="build_muscle">Build Muscle</option>
+                <option value="endurance">Build Endurance</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="submit-btn">
+            Create Account →
+          </button>
+        </form>
+        <div class="auth-link">
+          Already have an account? <a href="login.html">Log In</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../js/config.js"></script>
+  <script>
+    if (Auth.isLoggedIn()) window.location.href = 'dashboard.html';
+
+    const form = document.getElementById('signup-form');
+    const alert = document.getElementById('alert');
+    const alertMsg = document.getElementById('alert-msg');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function showError(msg) {
+      alertMsg.textContent = msg;
+      alert.classList.add('show');
+      alert.classList.remove('alert-success');
+      alert.classList.add('alert-error');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alert.classList.remove('show');
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!name || !email || !password) return showError('Name, email and password are required.');
+      if (password.length < 6) return showError('Password must be at least 6 characters.');
+
+      const body = {
+        name, email, password,
+        age: document.getElementById('age').value || undefined,
+        weight: document.getElementById('weight').value || undefined,
+        height: document.getElementById('height').value || undefined,
+        fitnessGoal: document.getElementById('fitnessGoal').value,
+      };
+
+      submitBtn.textContent = 'Creating account...';
+      submitBtn.disabled = true;
+
+      try {
+        const data = await apiFetch('/auth/signup', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        Auth.setSession(data.token, data.user);
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        showError(err.message);
+        submitBtn.textContent = 'Create Account →';
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

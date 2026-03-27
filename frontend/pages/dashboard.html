@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — FitTrack</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .two-col { display: grid; grid-template-columns: 1fr 380px; gap: 24px; }
+    @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+    .range-btns { display: flex; gap: 6px; }
+    .range-btn {
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text2); font-size: 0.8rem; padding: 6px 14px; cursor: pointer;
+      font-family: var(--font-mono); transition: all 0.2s;
+    }
+    .range-btn.active { background: var(--accent-muted); border-color: rgba(232,255,74,0.3); color: var(--accent); }
+    .recent-workout {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .recent-workout:last-child { border-bottom: none; }
+    .rw-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--bg3); display: grid; place-items: center; font-size: 1.1rem; flex-shrink: 0; }
+    .rw-title { font-size: 0.9rem; font-weight: 600; }
+    .rw-meta { font-size: 0.78rem; color: var(--text2); margin-top: 2px; }
+    .rw-cal { font-family: var(--font-display); font-size: 1.2rem; color: var(--accent); margin-left: auto; white-space: nowrap; }
+    .chart-legend { display: flex; gap: 16px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text2); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">FIT<span>TRACK</span></div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="sidebar-link active"><span class="sidebar-icon">🏠</span>Dashboard</a>
+        <a href="workouts.html" class="sidebar-link"><span class="sidebar-icon">💪</span>Workouts</a>
+        <a href="goals.html" class="sidebar-link"><span class="sidebar-icon">🎯</span>Goals</a>
+        <a href="profile.html" class="sidebar-link"><span class="sidebar-icon">👤</span>Profile</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+          <div>
+            <div class="sidebar-username" id="sidebar-name">Loading...</div>
+            <div class="sidebar-email" id="sidebar-email"></div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-full btn-sm" onclick="logout()" style="margin-top:8px;">
+          🚪 Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="page">
+        <div class="page-header">
+          <h1 class="page-title" id="greeting">Good morning! 👋</h1>
+          <p class="page-subtitle">Here's your fitness overview</p>
+        </div>
+
+        <!-- STAT CARDS -->
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <span class="stat-icon">🔥</span>
+            <div class="stat-label">Total Calories Burnt</div>
+            <div class="stat-value" id="stat-calories">—<span class="stat-unit">kcal</span></div>
+          </div>
+          <div class="stat-card" style="--accent:#4aaeff">
+            <span class="stat-icon">💪</span>
+            <div class="stat-label">Total Workouts</div>
+            <div class="stat-value" id="stat-workouts">—</div>
+          </div>
+          <div class="stat-card" style="--accent:#9b6aff">
+            <span class="stat-icon">⏱️</span>
+            <div class="stat-label">Total Minutes</div>
+            <div class="stat-value" id="stat-duration">—<span class="stat-unit">min</span></div>
+          </div>
+          <div class="stat-card" style="--accent:#4aff9b">
+            <span class="stat-icon">📅</span>
+            <div class="stat-label">Avg Calories/Day</div>
+            <div class="stat-value" id="stat-avg">—<span class="stat-unit">kcal</span></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <!-- BAR CHART -->
+          <div>
+            <div class="chart-container">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Calories Burnt</div>
+                  <div class="chart-legend" style="margin-top:6px;">
+                    <div class="legend-item">
+                      <div class="legend-dot" style="background:var(--accent)"></div>
+                      Daily Total (kcal)
+                    </div>
+                  </div>
+                </div>
+                <div class="range-btns">
+                  <button class="range-btn active" data-days="7">7D</button>
+                  <button class="range-btn" data-days="14">14D</button>
+                  <button class="range-btn" data-days="30">30D</button>
+                </div>
+              </div>
+              <div id="bar-chart" class="bar-chart">
+                <div class="chart-empty">
+                  <div class="spinner"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BY TYPE -->
+            <div class="chart-container">
+              <div class="chart-header">
+                <div class="chart-title">Workouts by Type</div>
+              </div>
+              <div id="type-chart" style="display:flex;flex-direction:column;gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- RECENT WORKOUTS -->
+          <div>
+            <div class="card" style="height:fit-content;">
+              <div class="section-header">
+                <div class="section-title">Recent Workouts</div>
+                <a href="workouts.html" class="btn btn-secondary btn-sm">View All</a>
+              </div>
+              <div id="recent-workouts">
+                <div class="loading"><div class="spinner"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MOBILE NAV -->
+  <nav class="mobile-nav">
+    <div class="mobile-nav-inner">
+      <a href="dashboard.html" class="mobile-nav-link active"><span class="mobile-nav-icon">🏠</span>Home</a>
+      <a href="workouts.html" class="mobile-nav-link"><span class="mobile-nav-icon">💪</span>Workouts</a>
+      <a href="goals.html" class="mobile-nav-link"><span class="mobile-nav-icon">🎯</span>Goals</a>
+      <a href="profile.html" class="mobile-nav-link"><span class="mobile-nav-icon">👤</span>Profile</a>
+      <button class="mobile-nav-link" onclick="logout()"><span class="mobile-nav-icon">🚪</span>Logout</button>
+    </div>
+  </nav>
+
+  <div id="toast-container"></div>
+  <script src="../js/config.js"></script>
+  <script>
+    if (!Auth.requireAuth()) throw new Error('Not authenticated');
+
+    const WORKOUT_ICONS = { cardio:'🏃', strength:'🏋️', yoga:'🧘', hiit:'⚡', cycling:'🚴', swimming:'🏊', running:'👟', walking:'🚶', other:'🤸' };
+
+    // ─── Greet ────────────────────────────────────────────────────────────────
+    const user = Auth.getUser();
+    const hour = new Date().getHours();
+    const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greeting').textContent = `${greet}, ${user?.name?.split(' ')[0] || 'Athlete'}! 👋`;
+    document.getElementById('sidebar-name').textContent = user?.name || '';
+    document.getElementById('sidebar-email').textContent = user?.email || '';
+    document.getElementById('sidebar-avatar').textContent = (user?.name?.[0] || '?').toUpperCase();
+
+    // ─── Toast ────────────────────────────────────────────────────────────────
+    function toast(msg, type = 'success') {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span>${msg}`;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(() => el.remove(), 3200);
+    }
+
+    // ─── Logout ───────────────────────────────────────────────────────────────
+    function logout() {
+      Auth.clear();
+      window.location.href = '../index.html';
+    }
+
+    // ─── Load stats ───────────────────────────────────────────────────────────
+    let currentDays = 7;
+
+    async function loadStats(days) {
+      try {
+        const data = await apiFetch(`/workouts/stats?days=${days}`);
+        const { dailyCalories, totals, byType } = data;
+
+        // Stat cards
+        document.getElementById('stat-calories').innerHTML = `${totals.totalCalories.toLocaleString()}<span class="stat-unit">kcal</span>`;
+        document.getElementById('stat-workouts').textContent = totals.totalWorkouts;
+        document.getElementById('stat-duration').innerHTML = `${totals.totalDuration.toLocaleString()}<span class="stat-unit">min</span>`;
+        const avgCal = dailyCalories.length ? Math.round(dailyCalories.reduce((s, d) => s + d.calories, 0) / dailyCalories.length) : 0;
+        document.getElementById('stat-avg').innerHTML = `${avgCal}<span class="stat-unit">kcal</span>`;
+
+        renderBarChart(dailyCalories, days);
+        renderTypeChart(byType);
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    // ─── Bar Chart ────────────────────────────────────────────────────────────
+    function renderBarChart(data, days) {
+      const chart = document.getElementById('bar-chart');
+      if (!data.length) {
+        chart.innerHTML = `<div class="chart-empty"><span class="empty-icon">📊</span><span>No workouts in this period</span></div>`;
+        return;
+      }
+
+      // Fill missing days
+      const map = {};
+      data.forEach(d => map[d._id] = d.calories);
+      const today = new Date();
+      const filled = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().split('T')[0];
+        filled.push({ date: key, calories: map[key] || 0 });
+      }
+
+      const max = Math.max(...filled.map(d => d.calories), 1);
+
+      const bars = filled.map(d => {
+        const pct = (d.calories / max) * 100;
+        const label = d.date.slice(5); // MM-DD
+        return `
+          <div class="bar-group">
+            <div class="bar" style="height:${Math.max(pct, 2)}%" data-value="${d.calories} kcal" title="${d.date}: ${d.calories} kcal"></div>
+            <div class="bar-label">${label}</div>
+          </div>`;
+      }).join('');
+
+      chart.innerHTML = bars;
+      // Animate bars in
+      requestAnimationFrame(() => {
+        chart.querySelectorAll('.bar').forEach((b, i) => {
+          b.style.opacity = '0';
+          b.style.transform = 'scaleY(0)';
+          b.style.transformOrigin = 'bottom';
+          setTimeout(() => {
+            b.style.transition = 'all 0.5s cubic-bezier(0.34,1.56,0.64,1)';
+            b.style.opacity = '1';
+            b.style.transform = 'scaleY(1)';
+          }, i * 40);
+        });
+      });
+    }
+
+    // ─── Type Chart ───────────────────────────────────────────────────────────
+    function renderTypeChart(byType) {
+      const container = document.getElementById('type-chart');
+      if (!byType.length) {
+        container.innerHTML = `<div class="chart-empty" style="height:80px;">No data</div>`;
+        return;
+      }
+      const max = Math.max(...byType.map(t => t.calories), 1);
+      container.innerHTML = byType.map(t => `
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:0.85rem;text-transform:capitalize;display:flex;align-items:center;gap:6px;">
+              ${WORKOUT_ICONS[t._id] || '🤸'} ${t._id}
+              <span style="color:var(--text3);font-size:0.75rem;">(${t.count}x)</span>
+            </span>
+            <span style="font-family:var(--font-mono);font-size:0.8rem;color:var(--accent);">${t.calories} kcal</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${(t.calories/max)*100}%"></div>
+          </div>
+        </div>`).join('');
+    }
+
+    // ─── Recent Workouts ─────────────────────────────────────────────────────
+    async function loadRecent() {
+      try {
+        const { workouts } = await apiFetch('/workouts?limit=6');
+        const container = document.getElementById('recent-workouts');
+        if (!workouts.length) {
+          container.innerHTML = `<div class="empty-state"><span class="empty-icon">💪</span><span class="empty-title">No workouts yet</span><a href="workouts.html" class="btn btn-primary btn-sm" style="margin-top:8px;">Log First Workout</a></div>`;
+          return;
+        }
+        container.innerHTML = workouts.map(w => {
+          const date = new Date(w.date).toLocaleDateString('en-IN', { month:'short', day:'numeric' });
+          return `
+            <div class="recent-workout">
+              <div class="rw-icon">${WORKOUT_ICONS[w.type] || '🤸'}</div>
+              <div>
+                <div class="rw-title">${w.title}</div>
+                <div class="rw-meta">${date} · ${w.duration} min · <span class="badge badge-${w.type}">${w.type}</span></div>
+              </div>
+              <div class="rw-cal">${w.caloriesBurnt}<br><span style="font-size:0.7rem;color:var(--text3);">kcal</span></div>
+            </div>`;
+        }).join('');
+      } catch (err) {
+        document.getElementById('recent-workouts').innerHTML = `<div class="alert alert-error show">⚠️ ${err.message}</div>`;
+      }
+    }
+
+    // ─── Range Buttons ────────────────────────────────────────────────────────
+    document.querySelectorAll('.range-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentDays = parseInt(btn.dataset.days);
+        loadStats(currentDays);
+      });
+    });
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
+    loadStats(currentDays);
+    loadRecent();
+  </script>
+</body>
+</html>

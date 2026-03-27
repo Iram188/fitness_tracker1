@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workouts — FitTrack</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .filter-bar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; align-items:center; }
+    .filter-select { background:var(--bg3); border:1px solid var(--border); border-radius:var(--r); color:var(--text); padding:9px 14px; font-size:0.85rem; cursor:pointer; }
+    .filter-select:focus { outline:none; border-color:var(--accent); }
+    .pagination { display:flex; gap:8px; align-items:center; justify-content:center; margin-top:24px; }
+    .page-btn { background:var(--bg3); border:1px solid var(--border); border-radius:8px; color:var(--text2); padding:8px 16px; font-size:0.85rem; cursor:pointer; transition:all 0.2s; }
+    .page-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .page-btn.active { background:var(--accent-muted); border-color:rgba(232,255,74,0.3); color:var(--accent); }
+    .page-info { font-size:0.82rem; color:var(--text3); font-family:var(--font-mono); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">FIT<span>TRACK</span></div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-link"><span class="sidebar-icon">🏠</span>Dashboard</a>
+      <a href="workouts.html" class="sidebar-link active"><span class="sidebar-icon">💪</span>Workouts</a>
+      <a href="goals.html" class="sidebar-link"><span class="sidebar-icon">🎯</span>Goals</a>
+      <a href="profile.html" class="sidebar-link"><span class="sidebar-icon">👤</span>Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="sidebar-username" id="sidebar-name"></div>
+          <div class="sidebar-email" id="sidebar-email"></div>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-full btn-sm" onclick="logout()" style="margin-top:8px;">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="page">
+      <div class="page-header">
+        <div class="section-header">
+          <div>
+            <h2 class="page-title">Workouts</h2>
+            <p class="page-subtitle">Log and manage your training sessions</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddModal()">+ Log Workout</button>
+        </div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filter-bar">
+        <select class="filter-select" id="filter-type" onchange="loadWorkouts(1)">
+          <option value="">All Types</option>
+          <option value="cardio">Cardio</option>
+          <option value="strength">Strength</option>
+          <option value="yoga">Yoga</option>
+          <option value="hiit">HIIT</option>
+          <option value="cycling">Cycling</option>
+          <option value="swimming">Swimming</option>
+          <option value="running">Running</option>
+          <option value="walking">Walking</option>
+          <option value="other">Other</option>
+        </select>
+        <input type="date" class="filter-select" id="filter-start" onchange="loadWorkouts(1)" style="color:var(--text2);" />
+        <input type="date" class="filter-select" id="filter-end"   onchange="loadWorkouts(1)" style="color:var(--text2);" />
+        <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Clear</button>
+        <span class="page-info" id="result-count"></span>
+      </div>
+
+      <!-- WORKOUT LIST -->
+      <div id="workout-list">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </main>
+</div>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <a href="dashboard.html" class="mobile-nav-link"><span class="mobile-nav-icon">🏠</span>Home</a>
+    <a href="workouts.html" class="mobile-nav-link active"><span class="mobile-nav-icon">💪</span>Workouts</a>
+    <a href="goals.html" class="mobile-nav-link"><span class="mobile-nav-icon">🎯</span>Goals</a>
+    <a href="profile.html" class="mobile-nav-link"><span class="mobile-nav-icon">👤</span>Profile</a>
+    <button class="mobile-nav-link" onclick="logout()"><span class="mobile-nav-icon">🚪</span>Logout</button>
+  </div>
+</nav>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="workout-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Log Workout</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-alert" class="alert alert-error" style="margin-bottom:12px;"><span>⚠️</span><span id="modal-alert-msg"></span></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id" />
+      <div class="form-group">
+        <label class="form-label">Workout Title *</label>
+        <input class="form-input" type="text" id="w-title" placeholder="e.g. Morning Run" />
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Type *</label>
+          <select class="form-select" id="w-type">
+            <option value="cardio">Cardio</option>
+            <option value="strength">Strength</option>
+            <option value="yoga">Yoga</option>
+            <option value="hiit">HIIT</option>
+            <option value="cycling">Cycling</option>
+            <option value="swimming">Swimming</option>
+            <option value="running">Running</option>
+            <option value="walking">Walking</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Intensity</label>
+          <select class="form-select" id="w-intensity">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Duration (min) *</label>
+          <input class="form-input" type="number" id="w-duration" placeholder="30" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Calories Burnt *</label>
+          <input class="form-input" type="number" id="w-calories" placeholder="250" min="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input class="form-input" type="date" id="w-date" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="w-notes" placeholder="How did it feel? Any PRs?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveWorkout()">Save Workout</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title">Delete Workout?</div>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <p style="color:var(--text2);font-size:0.9rem;">This action cannot be undone. The workout and all its data will be permanently removed.</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/config.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error('Not authenticated');
+
+  const user = Auth.getUser();
+  document.getElementById('sidebar-name').textContent = user?.name || '';
+  document.getElementById('sidebar-email').textContent = user?.email || '';
+  document.getElementById('sidebar-avatar').textContent = (user?.name?.[0] || '?').toUpperCase();
+
+  const ICONS = { cardio:'🏃', strength:'🏋️', yoga:'🧘', hiit:'⚡', cycling:'🚴', swimming:'🏊', running:'👟', walking:'🚶', other:'🤸' };
+  let currentPage = 1;
+  let deleteId = null;
+
+  function toast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span>${msg}`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+  }
+
+  function logout() { Auth.clear(); window.location.href = '../index.html'; }
+
+  // ─── Load Workouts ─────────────────────────────────────────────────────────
+  async function loadWorkouts(page = 1) {
+    currentPage = page;
+    const type = document.getElementById('filter-type').value;
+    const start = document.getElementById('filter-start').value;
+    const end = document.getElementById('filter-end').value;
+    let qs = `?limit=10&page=${page}`;
+    if (type) qs += `&type=${type}`;
+    if (start) qs += `&startDate=${start}`;
+    if (end) qs += `&endDate=${end}`;
+
+    document.getElementById('workout-list').innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
+
+    try {
+      const { workouts, total, pages } = await apiFetch(`/workouts${qs}`);
+      document.getElementById('result-count').textContent = `${total} workout${total !== 1 ? 's' : ''}`;
+      renderWorkouts(workouts);
+      renderPagination(page, pages);
+    } catch (err) {
+      document.getElementById('workout-list').innerHTML = `<div class="alert alert-error show">⚠️ ${err.message}</div>`;
+    }
+  }
+
+  function renderWorkouts(workouts) {
+    const container = document.getElementById('workout-list');
+    if (!workouts.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-icon">💪</span>
+          <span class="empty-title">No workouts found</span>
+          <span style="color:var(--text3);">Log your first workout to get started!</span>
+          <button class="btn btn-primary btn-sm" onclick="openAddModal()" style="margin-top:8px;">+ Log Workout</button>
+        </div>`;
+      return;
+    }
+    container.innerHTML = `<div class="workout-list">${workouts.map(w => {
+      const date = new Date(w.date).toLocaleDateString('en-IN', { weekday:'short', month:'short', day:'numeric' });
+      return `
+        <div class="workout-item fade-in">
+          <div class="workout-icon">${ICONS[w.type] || '🤸'}</div>
+          <div class="workout-info">
+            <div class="workout-title">${w.title}</div>
+            <div class="workout-meta">
+              <span class="badge badge-${w.type}">${w.type}</span>
+              <span class="workout-meta-item">⏱️ ${w.duration} min</span>
+              <span class="workout-meta-item">⚡ ${w.intensity}</span>
+              <span class="workout-meta-item">📅 ${date}</span>
+              ${w.notes ? `<span class="workout-meta-item" title="${w.notes}">📝 Note</span>` : ''}
+            </div>
+          </div>
+          <div class="workout-calories">${w.caloriesBurnt}<br><span style="font-size:0.7rem;color:var(--text3);">kcal</span></div>
+          <div class="workout-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openEditModal('${w._id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${w._id}')">🗑️</button>
+          </div>
+        </div>`;
+    }).join('')}</div>`;
+  }
+
+  function renderPagination(page, pages) {
+    const p = document.getElementById('pagination');
+    if (pages <= 1) { p.innerHTML = ''; return; }
+    let html = '';
+    if (page > 1) html += `<button class="page-btn" onclick="loadWorkouts(${page-1})">← Prev</button>`;
+    for (let i = 1; i <= pages; i++) {
+      html += `<button class="page-btn ${i===page?'active':''}" onclick="loadWorkouts(${i})">${i}</button>`;
+    }
+    if (page < pages) html += `<button class="page-btn" onclick="loadWorkouts(${page+1})">Next →</button>`;
+    p.innerHTML = html;
+  }
+
+  function clearFilters() {
+    document.getElementById('filter-type').value = '';
+    document.getElementById('filter-start').value = '';
+    document.getElementById('filter-end').value = '';
+    loadWorkouts(1);
+  }
+
+  // ─── Add Modal ─────────────────────────────────────────────────────────────
+  function openAddModal() {
+    document.getElementById('modal-title').textContent = 'Log Workout';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('w-title').value = '';
+    document.getElementById('w-type').value = 'cardio';
+    document.getElementById('w-intensity').value = 'medium';
+    document.getElementById('w-duration').value = '';
+    document.getElementById('w-calories').value = '';
+    document.getElementById('w-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('w-notes').value = '';
+    document.getElementById('save-btn').textContent = 'Save Workout';
+    document.getElementById('modal-alert').classList.remove('show');
+    document.getElementById('workout-modal').classList.add('open');
+  }
+
+  // ─── Edit Modal ─────────────────────────────────────────────────────────────
+  async function openEditModal(id) {
+    try {
+      const w = await apiFetch(`/workouts/${id}`);
+      document.getElementById('modal-title').textContent = 'Edit Workout';
+      document.getElementById('edit-id').value = w._id;
+      document.getElementById('w-title').value = w.title;
+      document.getElementById('w-type').value = w.type;
+      document.getElementById('w-intensity').value = w.intensity;
+      document.getElementById('w-duration').value = w.duration;
+      document.getElementById('w-calories').value = w.caloriesBurnt;
+      document.getElementById('w-date').value = new Date(w.date).toISOString().split('T')[0];
+      document.getElementById('w-notes').value = w.notes || '';
+      document.getElementById('save-btn').textContent = 'Update Workout';
+      document.getElementById('modal-alert').classList.remove('show');
+      document.getElementById('workout-modal').classList.add('open');
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  function closeModal() { document.getElementById('workout-modal').classList.remove('open'); }
+
+  // ─── Save (Create or Update) ───────────────────────────────────────────────
+  async function saveWorkout() {
+    const id = document.getElementById('edit-id').value;
+    const title = document.getElementById('w-title').value.trim();
+    const type = document.getElementById('w-type').value;
+    const intensity = document.getElementById('w-intensity').value;
+    const duration = parseInt(document.getElementById('w-duration').value);
+    const caloriesBurnt = parseInt(document.getElementById('w-calories').value);
+    const date = document.getElementById('w-date').value;
+    const notes = document.getElementById('w-notes').value.trim();
+
+    const alertEl = document.getElementById('modal-alert');
+    const alertMsg = document.getElementById('modal-alert-msg');
+
+    if (!title || !type || !duration || !caloriesBurnt) {
+      alertMsg.textContent = 'Title, type, duration and calories are required.';
+      alertEl.classList.add('show');
+      return;
+    }
+
+    const body = { title, type, intensity, duration, caloriesBurnt, notes };
+    if (date) body.date = date;
+
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.textContent = 'Saving...';
+    saveBtn.disabled = true;
+
+    try {
+      if (id) {
+        await apiFetch(`/workouts/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+        toast('Workout updated!');
+      } else {
+        await apiFetch('/workouts', { method: 'POST', body: JSON.stringify(body) });
+        toast('Workout logged! 🔥');
+      }
+      closeModal();
+      loadWorkouts(currentPage);
+    } catch (err) {
+      alertMsg.textContent = err.message;
+      alertEl.classList.add('show');
+    } finally {
+      saveBtn.textContent = id ? 'Update Workout' : 'Save Workout';
+      saveBtn.disabled = false;
+    }
+  }
+
+  // ─── Delete ────────────────────────────────────────────────────────────────
+  function openDeleteModal(id) {
+    deleteId = id;
+    document.getElementById('delete-modal').classList.add('open');
+  }
+  function closeDeleteModal() {
+    deleteId = null;
+    document.getElementById('delete-modal').classList.remove('open');
+  }
+  async function confirmDelete() {
+    if (!deleteId) return;
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.textContent = 'Deleting...';
+    btn.disabled = true;
+    try {
+      await apiFetch(`/workouts/${deleteId}`, { method: 'DELETE' });
+      toast('Workout deleted');
+      closeDeleteModal();
+      loadWorkouts(currentPage);
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      btn.textContent = 'Delete';
+      btn.disabled = false;
+    }
+  }
+
+  // Close modals on overlay click
+  document.getElementById('workout-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+  document.getElementById('delete-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
+
+  loadWorkouts();
+</script>
+</body>
+</html>

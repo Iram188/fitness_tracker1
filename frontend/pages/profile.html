@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — FitTrack</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .profile-hero {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    .profile-avatar-lg {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: grid; place-items: center;
+      color: #000;
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      flex-shrink: 0;
+      border: 3px solid rgba(232,255,74,0.3);
+    }
+    .profile-name { font-family: var(--font-display); font-size: 1.8rem; }
+    .profile-email { color: var(--text2); font-size: 0.9rem; margin-top: 4px; }
+    .profile-meta { display:flex; gap:16px; margin-top:10px; flex-wrap:wrap; }
+    .profile-meta-item { font-size:0.82rem; color:var(--text3); }
+    .profile-meta-item strong { color:var(--text2); }
+    .two-col-profile { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media (max-width:900px) { .two-col-profile { grid-template-columns:1fr; } }
+    .danger-zone {
+      border: 1px solid rgba(255,74,110,0.3);
+      border-radius: var(--r2);
+      padding: 24px;
+      margin-top: 24px;
+    }
+    .danger-title { color:var(--red); font-family:var(--font-display); font-size:1.2rem; margin-bottom:8px; }
+    .danger-desc { color:var(--text2); font-size:0.88rem; margin-bottom:16px; }
+    .bmi-indicator {
+      display:inline-block;
+      padding:4px 12px;
+      border-radius:100px;
+      font-size:0.78rem;
+      font-weight:600;
+      margin-left:8px;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">FIT<span>TRACK</span></div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-link"><span class="sidebar-icon">🏠</span>Dashboard</a>
+      <a href="workouts.html" class="sidebar-link"><span class="sidebar-icon">💪</span>Workouts</a>
+      <a href="goals.html" class="sidebar-link"><span class="sidebar-icon">🎯</span>Goals</a>
+      <a href="profile.html" class="sidebar-link active"><span class="sidebar-icon">👤</span>Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="sidebar-username" id="sidebar-name"></div>
+          <div class="sidebar-email" id="sidebar-email"></div>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-full btn-sm" onclick="logout()" style="margin-top:8px;">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page">
+      <div class="page-header">
+        <h2 class="page-title">Profile</h2>
+        <p class="page-subtitle">Manage your account and preferences</p>
+      </div>
+
+      <!-- PROFILE HERO -->
+      <div class="profile-hero" id="profile-hero">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+
+      <div class="two-col-profile">
+        <!-- EDIT PROFILE -->
+        <div class="card">
+          <div class="section-title" style="margin-bottom:20px;">Edit Profile</div>
+          <div id="profile-alert" class="alert" style="margin-bottom:16px;"><span>⚠️</span><span id="profile-alert-msg"></span></div>
+          <form id="profile-form" style="display:flex;flex-direction:column;gap:16px;" novalidate>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input class="form-input" type="text" id="p-name" />
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Age</label>
+                <input class="form-input" type="number" id="p-age" min="10" max="120" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Weight (kg)</label>
+                <input class="form-input" type="number" id="p-weight" min="20" max="500" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Height (cm)</label>
+              <input class="form-input" type="number" id="p-height" min="50" max="300" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fitness Goal</label>
+              <select class="form-select" id="p-goal">
+                <option value="stay_fit">Stay Fit</option>
+                <option value="lose_weight">Lose Weight</option>
+                <option value="build_muscle">Build Muscle</option>
+                <option value="endurance">Build Endurance</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary" id="profile-save-btn">Save Changes</button>
+          </form>
+        </div>
+
+        <!-- CHANGE PASSWORD -->
+        <div>
+          <div class="card" style="margin-bottom:20px;">
+            <div class="section-title" style="margin-bottom:20px;">Change Password</div>
+            <div id="pwd-alert" class="alert" style="margin-bottom:16px;"><span id="pwd-icon">⚠️</span><span id="pwd-alert-msg"></span></div>
+            <form id="pwd-form" style="display:flex;flex-direction:column;gap:16px;" novalidate>
+              <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input class="form-input" type="password" id="p-current-pwd" placeholder="Your current password" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input class="form-input" type="password" id="p-new-pwd" placeholder="Min. 6 characters" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm New Password</label>
+                <input class="form-input" type="password" id="p-confirm-pwd" placeholder="Repeat new password" />
+              </div>
+              <button type="submit" class="btn btn-primary" id="pwd-save-btn">Update Password</button>
+            </form>
+          </div>
+
+          <!-- ACCOUNT STATS -->
+          <div class="card">
+            <div class="section-title" style="margin-bottom:16px;">Account Info</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border);">
+                <span style="color:var(--text2);font-size:0.88rem;">Member since</span>
+                <span id="member-since" style="font-size:0.88rem;font-family:var(--font-mono);">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border);">
+                <span style="color:var(--text2);font-size:0.88rem;">BMI</span>
+                <span id="bmi-value" style="font-size:0.88rem;font-family:var(--font-mono);">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;">
+                <span style="color:var(--text2);font-size:0.88rem;">Fitness Goal</span>
+                <span id="goal-display" style="font-size:0.88rem;color:var(--accent);">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DANGER ZONE -->
+      <div class="danger-zone">
+        <div class="danger-title">⚠️ Danger Zone</div>
+        <div class="danger-desc">Permanently delete your account and all associated data. This action cannot be undone.</div>
+        <button class="btn btn-danger" onclick="confirmDeleteAccount()">Delete My Account</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <a href="dashboard.html" class="mobile-nav-link"><span class="mobile-nav-icon">🏠</span>Home</a>
+    <a href="workouts.html" class="mobile-nav-link"><span class="mobile-nav-icon">💪</span>Workouts</a>
+    <a href="goals.html" class="mobile-nav-link"><span class="mobile-nav-icon">🎯</span>Goals</a>
+    <a href="profile.html" class="mobile-nav-link active"><span class="mobile-nav-icon">👤</span>Profile</a>
+    <button class="mobile-nav-link" onclick="logout()"><span class="mobile-nav-icon">🚪</span>Logout</button>
+  </div>
+</nav>
+
+<div id="toast-container"></div>
+<script src="../js/config.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error('Not authenticated');
+
+  const GOAL_LABELS = { stay_fit:'Stay Fit', lose_weight:'Lose Weight', build_muscle:'Build Muscle', endurance:'Build Endurance' };
+
+  function toast(msg, type='success') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span>${type==='success'?'✅':'❌'}</span>${msg}`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+  }
+
+  function logout() { Auth.clear(); window.location.href = '../index.html'; }
+
+  function showAlert(id, msg, type='error') {
+    const el = document.getElementById(id);
+    const msgEl = document.getElementById(id+'-msg');
+    if (msgEl) msgEl.textContent = msg;
+    el.className = `alert alert-${type} show`;
+  }
+
+  function calcBMI(weight, height) {
+    if (!weight || !height) return null;
+    const bmi = weight / Math.pow(height/100, 2);
+    return Math.round(bmi * 10) / 10;
+  }
+
+  function bmiLabel(bmi) {
+    if (bmi < 18.5) return { label:'Underweight', color:'var(--blue)' };
+    if (bmi < 25)   return { label:'Normal', color:'var(--green)' };
+    if (bmi < 30)   return { label:'Overweight', color:'var(--orange)' };
+    return { label:'Obese', color:'var(--red)' };
+  }
+
+  // ─── Load Profile ─────────────────────────────────────────────────────────
+  async function loadProfile() {
+    try {
+      const user = await apiFetch('/users/profile');
+      const hero = document.getElementById('profile-hero');
+      const joined = new Date(user.createdAt).toLocaleDateString('en-IN', { month:'long', year:'numeric' });
+      const bmi = calcBMI(user.weight, user.height);
+      const bmiInfo = bmi ? bmiLabel(bmi) : null;
+
+      hero.innerHTML = `
+        <div class="profile-avatar-lg">${(user.name?.[0] || '?').toUpperCase()}</div>
+        <div>
+          <div class="profile-name">${user.name}</div>
+          <div class="profile-email">${user.email}</div>
+          <div class="profile-meta">
+            ${user.age ? `<span class="profile-meta-item"><strong>${user.age}</strong> yrs</span>` : ''}
+            ${user.weight ? `<span class="profile-meta-item"><strong>${user.weight}</strong> kg</span>` : ''}
+            ${user.height ? `<span class="profile-meta-item"><strong>${user.height}</strong> cm</span>` : ''}
+            ${bmi ? `<span class="profile-meta-item">BMI <strong>${bmi}</strong>
+              <span class="bmi-indicator" style="background:${bmiInfo.color}22;color:${bmiInfo.color};">${bmiInfo.label}</span>
+            </span>` : ''}
+          </div>
+        </div>`;
+
+      // Fill form
+      document.getElementById('p-name').value = user.name || '';
+      document.getElementById('p-age').value = user.age || '';
+      document.getElementById('p-weight').value = user.weight || '';
+      document.getElementById('p-height').value = user.height || '';
+      document.getElementById('p-goal').value = user.fitnessGoal || 'stay_fit';
+
+      // Info panel
+      document.getElementById('member-since').textContent = joined;
+      document.getElementById('bmi-value').textContent = bmi ? `${bmi} ${bmiInfo ? '— '+bmiInfo.label : ''}` : 'N/A';
+      document.getElementById('goal-display').textContent = GOAL_LABELS[user.fitnessGoal] || '—';
+
+      // Update local storage
+      Auth.setSession(Auth.getToken(), user);
+      document.getElementById('sidebar-name').textContent = user.name;
+      document.getElementById('sidebar-email').textContent = user.email;
+      document.getElementById('sidebar-avatar').textContent = (user.name?.[0]||'?').toUpperCase();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  // ─── Save Profile ─────────────────────────────────────────────────────────
+  document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('profile-save-btn');
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    try {
+      const body = {
+        name: document.getElementById('p-name').value.trim(),
+        age: document.getElementById('p-age').value || undefined,
+        weight: document.getElementById('p-weight').value || undefined,
+        height: document.getElementById('p-height').value || undefined,
+        fitnessGoal: document.getElementById('p-goal').value,
+      };
+      await apiFetch('/users/profile', { method:'PUT', body: JSON.stringify(body) });
+      toast('Profile updated!');
+      loadProfile();
+    } catch (err) {
+      showAlert('profile-alert', err.message);
+    } finally {
+      btn.textContent = 'Save Changes'; btn.disabled = false;
+    }
+  });
+
+  // ─── Change Password ──────────────────────────────────────────────────────
+  document.getElementById('pwd-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const current = document.getElementById('p-current-pwd').value;
+    const newPwd = document.getElementById('p-new-pwd').value;
+    const confirm = document.getElementById('p-confirm-pwd').value;
+
+    if (!current || !newPwd) return showAlert('pwd-alert', 'Both password fields are required.');
+    if (newPwd !== confirm) return showAlert('pwd-alert', 'New passwords do not match.');
+    if (newPwd.length < 6) return showAlert('pwd-alert', 'New password must be at least 6 characters.');
+
+    const btn = document.getElementById('pwd-save-btn');
+    btn.textContent = 'Updating...'; btn.disabled = true;
+
+    try {
+      await apiFetch('/users/password', { method:'PUT', body: JSON.stringify({ currentPassword: current, newPassword: newPwd }) });
+      showAlert('pwd-alert', 'Password updated successfully!', 'success');
+      document.getElementById('pwd-form').reset();
+    } catch (err) {
+      showAlert('pwd-alert', err.message);
+    } finally {
+      btn.textContent = 'Update Password'; btn.disabled = false;
+    }
+  });
+
+  // ─── Delete Account ───────────────────────────────────────────────────────
+  function confirmDeleteAccount() {
+    if (confirm('Are you absolutely sure? This will permanently delete your account and all data.')) {
+      apiFetch('/users/account', { method:'DELETE' })
+        .then(() => { Auth.clear(); window.location.href = '../index.html'; })
+        .catch(err => toast(err.message, 'error'));
+    }
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>

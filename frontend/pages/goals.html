@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Goals — FitTrack</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .goal-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+    .goal-actions { display:flex; gap:6px; }
+    .goal-completed-badge {
+      display:inline-block; padding:3px 10px; border-radius:100px;
+      background:rgba(74,255,155,0.15); color:var(--green);
+      font-size:0.72rem; font-weight:600; letter-spacing:0.06em;
+    }
+    .goal-deadline { font-size:0.75rem; color:var(--text3); margin-top:6px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">FIT<span>TRACK</span></div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-link"><span class="sidebar-icon">🏠</span>Dashboard</a>
+      <a href="workouts.html" class="sidebar-link"><span class="sidebar-icon">💪</span>Workouts</a>
+      <a href="goals.html" class="sidebar-link active"><span class="sidebar-icon">🎯</span>Goals</a>
+      <a href="profile.html" class="sidebar-link"><span class="sidebar-icon">👤</span>Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="sidebar-username" id="sidebar-name"></div>
+          <div class="sidebar-email" id="sidebar-email"></div>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-full btn-sm" onclick="logout()" style="margin-top:8px;">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page">
+      <div class="page-header">
+        <div class="section-header">
+          <div>
+            <h2 class="page-title">Goals</h2>
+            <p class="page-subtitle">Set targets, track progress, achieve greatness</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddModal()">+ New Goal</button>
+        </div>
+      </div>
+
+      <div id="goals-container">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <a href="dashboard.html" class="mobile-nav-link"><span class="mobile-nav-icon">🏠</span>Home</a>
+    <a href="workouts.html" class="mobile-nav-link"><span class="mobile-nav-icon">💪</span>Workouts</a>
+    <a href="goals.html" class="mobile-nav-link active"><span class="mobile-nav-icon">🎯</span>Goals</a>
+    <a href="profile.html" class="mobile-nav-link"><span class="mobile-nav-icon">👤</span>Profile</a>
+    <button class="mobile-nav-link" onclick="logout()"><span class="mobile-nav-icon">🚪</span>Logout</button>
+  </div>
+</nav>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="goal-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">New Goal</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-alert" class="alert alert-error" style="margin-bottom:12px;"><span>⚠️</span><span id="modal-alert-msg"></span></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id" />
+      <div class="form-group">
+        <label class="form-label">Goal Title *</label>
+        <input class="form-input" type="text" id="g-title" placeholder="e.g. Burn 500 kcal/day" />
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Type *</label>
+          <select class="form-select" id="g-type" onchange="updateUnit()">
+            <option value="calories">Calories</option>
+            <option value="workouts">Workouts</option>
+            <option value="duration">Duration</option>
+            <option value="weight">Weight</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit</label>
+          <input class="form-input" type="text" id="g-unit" placeholder="kcal" />
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Target Value *</label>
+          <input class="form-input" type="number" id="g-target" placeholder="500" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Progress</label>
+          <input class="form-input" type="number" id="g-current" placeholder="0" min="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline (optional)</label>
+        <input class="form-input" type="date" id="g-deadline" />
+      </div>
+      <div class="form-group" id="completed-group" style="display:none;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="checkbox" id="g-completed" style="accent-color:var(--accent);width:16px;height:16px;" />
+          <span class="form-label" style="margin:0;">Mark as completed</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveGoal()">Save Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title">Delete Goal?</div>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <p style="color:var(--text2);font-size:0.9rem;">This will permanently remove your goal and progress tracking.</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/config.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error('Not authenticated');
+
+  const user = Auth.getUser();
+  document.getElementById('sidebar-name').textContent = user?.name || '';
+  document.getElementById('sidebar-email').textContent = user?.email || '';
+  document.getElementById('sidebar-avatar').textContent = (user?.name?.[0] || '?').toUpperCase();
+
+  const TYPE_UNITS = { calories: 'kcal', workouts: 'sessions', duration: 'min', weight: 'kg' };
+  const TYPE_ICONS = { calories: '🔥', workouts: '💪', duration: '⏱️', weight: '⚖️' };
+  let deleteId = null;
+
+  function toast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span>${msg}`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+  }
+
+  function logout() { Auth.clear(); window.location.href = '../index.html'; }
+
+  function updateUnit() {
+    const type = document.getElementById('g-type').value;
+    document.getElementById('g-unit').value = TYPE_UNITS[type] || '';
+  }
+
+  // ─── Load Goals ────────────────────────────────────────────────────────────
+  async function loadGoals() {
+    try {
+      const goals = await apiFetch('/goals');
+      const container = document.getElementById('goals-container');
+
+      if (!goals.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <span class="empty-icon">🎯</span>
+            <span class="empty-title">No goals yet</span>
+            <span style="color:var(--text3);">Set your first fitness goal to stay motivated!</span>
+            <button class="btn btn-primary btn-sm" onclick="openAddModal()" style="margin-top:12px;">+ New Goal</button>
+          </div>`;
+        return;
+      }
+
+      const active = goals.filter(g => !g.completed);
+      const done   = goals.filter(g => g.completed);
+
+      let html = '';
+      if (active.length) {
+        html += `<div style="margin-bottom:12px;">
+          <div class="section-title" style="margin-bottom:16px;">Active Goals (${active.length})</div>
+          <div class="goal-list">${active.map(goalCard).join('')}</div>
+        </div>`;
+      }
+      if (done.length) {
+        html += `<div style="margin-top:32px;">
+          <div class="section-title" style="margin-bottom:16px;">Completed Goals (${done.length})</div>
+          <div class="goal-list">${done.map(goalCard).join('')}</div>
+        </div>`;
+      }
+
+      container.innerHTML = html;
+    } catch (err) {
+      document.getElementById('goals-container').innerHTML = `<div class="alert alert-error show">⚠️ ${err.message}</div>`;
+    }
+  }
+
+  function goalCard(g) {
+    const pct = Math.min(Math.round((g.currentValue / g.targetValue) * 100), 100) || 0;
+    const deadline = g.deadline ? new Date(g.deadline).toLocaleDateString('en-IN', { month:'short', day:'numeric', year:'numeric' }) : null;
+    return `
+      <div class="goal-card fade-in">
+        <div class="goal-card-header">
+          <div>
+            <div style="font-size:1.4rem;margin-bottom:4px;">${TYPE_ICONS[g.type] || '🎯'}</div>
+            <div class="goal-title">${g.title}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+            ${g.completed ? '<span class="goal-completed-badge">✓ Done</span>' : ''}
+            <div class="goal-actions">
+              <button class="btn btn-secondary btn-sm" onclick="openEditModal('${g._id}')">✏️</button>
+              <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${g._id}')">🗑️</button>
+            </div>
+          </div>
+        </div>
+        <div class="goal-type">${g.type}</div>
+        <div class="progress-label">
+          <span>${g.currentValue} ${g.unit}</span>
+          <span>${g.targetValue} ${g.unit}</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill ${g.completed ? 'complete' : ''}" style="width:${pct}%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+          <span style="font-size:0.78rem;color:var(--text3);">${pct}% complete</span>
+          ${deadline ? `<span class="goal-deadline">📅 ${deadline}</span>` : ''}
+        </div>
+      </div>`;
+  }
+
+  // ─── Modals ────────────────────────────────────────────────────────────────
+  function openAddModal() {
+    document.getElementById('modal-title').textContent = 'New Goal';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('g-title').value = '';
+    document.getElementById('g-type').value = 'calories';
+    document.getElementById('g-unit').value = 'kcal';
+    document.getElementById('g-target').value = '';
+    document.getElementById('g-current').value = '';
+    document.getElementById('g-deadline').value = '';
+    document.getElementById('g-completed').checked = false;
+    document.getElementById('completed-group').style.display = 'none';
+    document.getElementById('save-btn').textContent = 'Save Goal';
+    document.getElementById('modal-alert').classList.remove('show');
+    document.getElementById('goal-modal').classList.add('open');
+  }
+
+  async function openEditModal(id) {
+    try {
+      const goals = await apiFetch('/goals');
+      const g = goals.find(x => x._id === id);
+      if (!g) return toast('Goal not found', 'error');
+      document.getElementById('modal-title').textContent = 'Edit Goal';
+      document.getElementById('edit-id').value = g._id;
+      document.getElementById('g-title').value = g.title;
+      document.getElementById('g-type').value = g.type;
+      document.getElementById('g-unit').value = g.unit;
+      document.getElementById('g-target').value = g.targetValue;
+      document.getElementById('g-current').value = g.currentValue;
+      document.getElementById('g-deadline').value = g.deadline ? new Date(g.deadline).toISOString().split('T')[0] : '';
+      document.getElementById('g-completed').checked = g.completed;
+      document.getElementById('completed-group').style.display = 'block';
+      document.getElementById('save-btn').textContent = 'Update Goal';
+      document.getElementById('modal-alert').classList.remove('show');
+      document.getElementById('goal-modal').classList.add('open');
+    } catch (err) { toast(err.message, 'error'); }
+  }
+
+  function closeModal() { document.getElementById('goal-modal').classList.remove('open'); }
+
+  async function saveGoal() {
+    const id = document.getElementById('edit-id').value;
+    const title = document.getElementById('g-title').value.trim();
+    const type = document.getElementById('g-type').value;
+    const unit = document.getElementById('g-unit').value.trim();
+    const targetValue = parseFloat(document.getElementById('g-target').value);
+    const currentValue = parseFloat(document.getElementById('g-current').value) || 0;
+    const deadline = document.getElementById('g-deadline').value;
+    const completed = document.getElementById('g-completed').checked;
+
+    const alertEl = document.getElementById('modal-alert');
+    const alertMsg = document.getElementById('modal-alert-msg');
+    if (!title || !type || isNaN(targetValue)) {
+      alertMsg.textContent = 'Title, type and target value are required.';
+      alertEl.classList.add('show'); return;
+    }
+
+    const body = { title, type, unit, targetValue, currentValue, completed };
+    if (deadline) body.deadline = deadline;
+
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.textContent = 'Saving...'; saveBtn.disabled = true;
+
+    try {
+      if (id) {
+        await apiFetch(`/goals/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+        toast('Goal updated!');
+      } else {
+        await apiFetch('/goals', { method: 'POST', body: JSON.stringify(body) });
+        toast('Goal created! 🎯');
+      }
+      closeModal();
+      loadGoals();
+    } catch (err) {
+      alertMsg.textContent = err.message;
+      alertEl.classList.add('show');
+    } finally {
+      saveBtn.textContent = id ? 'Update Goal' : 'Save Goal';
+      saveBtn.disabled = false;
+    }
+  }
+
+  function openDeleteModal(id) {
+    deleteId = id;
+    document.getElementById('delete-modal').classList.add('open');
+  }
+  function closeDeleteModal() {
+    deleteId = null;
+    document.getElementById('delete-modal').classList.remove('open');
+  }
+  async function confirmDelete() {
+    if (!deleteId) return;
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.textContent = 'Deleting...'; btn.disabled = true;
+    try {
+      await apiFetch(`/goals/${deleteId}`, { method: 'DELETE' });
+      toast('Goal deleted');
+      closeDeleteModal();
+      loadGoals();
+    } catch (err) { toast(err.message, 'error'); }
+    finally { btn.textContent = 'Delete'; btn.disabled = false; }
+  }
+
+  document.getElementById('goal-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+  document.getElementById('delete-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
+
+  loadGoals();
+</script>
+</body>
+</html>
